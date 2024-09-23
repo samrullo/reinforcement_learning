@@ -20,6 +20,10 @@ class GridWorld:
     def __init__(self, reward_map: np.array = None, wall_states: List[State] = None, apple_states: List[State] = None,
                  bomb_states: List[State] = None, goal_state: State = None, goal_state_reward: float = None):
         self.actions = Action
+        if goal_state is None:
+            self.goal_state = State(0,3)
+        else:
+            self.goal_state = goal_state
 
         if apple_states is None:
             self.apple_states = [State(0, 3)]
@@ -44,9 +48,9 @@ class GridWorld:
             self.reward_map[state] = -1
 
         if goal_state_reward is None:
-            self.reward_map[goal_state] = len(self.apple_states)
+            self.reward_map[self.goal_state] = len(self.apple_states)
         else:
-            self.reward_map[goal_state] = goal_state_reward
+            self.reward_map[self.goal_state] = goal_state_reward
 
         # A move to the right is changing (y,x) cell coordinates by (0,1)
         # A move to the left is changing (y,x) cell coordinates by (0,-1)
