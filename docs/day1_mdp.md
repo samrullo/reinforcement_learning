@@ -27,8 +27,68 @@ $$
 
 ## Policy
 What action will the Agent choose when he is at a certain state
-This notation represents the probability choosing action *a*, when at state *s*
+This notation represents the probability of choosing action *a*, when at state *s*
 
 $$
 \pi(a|s)
 $$
+
+# Return
+*Return* is defined as below
+
+$$
+G_t=R_t+\gamma \dot R_{t+1} + \gamma^2 \dot R_{t+2} + \gamma^3 \dot R_{t+3} + ... 
+$$
+
+Agent's goal is to find the *policy* that maximized *Return*. Policy is probabilistic,
+state transitions probabilistically, reward is probabilistic, hence *Return* is also probabilistic.
+Even if the Agent starts from exact same State and follows exact same Policy, the obtained *Return* may differ.
+In one episode earned *Return* can be 10.4, in another it can be 9.8 etc.
+To deal with such probabilistic nature of *Return* we work with its *Expected Value*
+Below reads as the value of state *s* under policy *pi*.
+The right side reads as the *Expected value of *Return* at time *t*, under policy *Pi* when agent starts from state *s*
+$$
+V_{\pi}(s) = E_{\pi}[G_t | S_t=s]
+$$
+
+We can plot **state values** under different policies *pi*.
+Optimal policy *pi star* is the one where for any other *pi*
+
+$$
+v_{\pi\star} >= v_{\pi}
+$$
+
+![optimal policy vs other policies](optimal_policy_vs_other_policies.jpg)
+
+# Markov Decision Process
+We will introduce MDP, Markov Decision Process as all RL problems follow this process.
+MDP is a kind of process where the Agent makes a decision based on current state only.
+It doesn't take into account any other past states other than the current state.
+In real life this is hardly the case, but it simplifies RL problem and allows to build Agents who can learn.
+
+> To demonstrate why MDP is hardly the case in real life, take the example of writing text, i.e. predicting next word in a sequence.
+Each word in the sequence can be considered a state.
+Do you decide next word based on previous word only? Or do you take into account all previous words in the sequence?
+Consider continueing below sentence. MDP says that you decide next word based on current state which is the last word in the sequence "she"
+"Visiting Europe was her dream, so when she became an adult she ..."
+
+
+MDP makes an assumption that *the current state* stores all the information necessary to make a decision.
+In other words *the current state* encodes all the information from past states into itself.
+
+Below is a simple example of MDP.
+
+![two cell problem](two_cell_problem.jpg)
+
+- This environment consists of two cells *L1* and *L2* which are surrounded by walls
+- The agent can move rom one cell to another
+- State transition is deterministic, i.e. if agent decides to move the *Right* then it **will move** to the *Right* and appear in the cell to the right of it
+- When the agent moves from cell L1 to L2 it eats an apple and receives a reward of +1
+- When it hits the walls it receives a reward of -1
+- This is a never ending continuous task
+
+**Exercse 1**
+What kind of *policies* can you think of for the agent? E.g. the agent always moves to the Right.
+Below is the **bakup diagram** for that policy
+
+![move to the right](backup_diagram_move_to_right_always.jpg)
