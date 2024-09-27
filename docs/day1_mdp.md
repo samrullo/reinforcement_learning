@@ -92,3 +92,7 @@ What kind of *policies* can you think of for the agent? E.g. the agent always mo
 Below is the **bakup diagram** for that policy
 
 ![move to the right](backup_diagram_move_to_right_always.jpg)
+
+Below is another example of back up diagram where agent chooses actions Right and Left with 50% probability
+
+![random walk](backup_diagram_random_walk.jpg)
