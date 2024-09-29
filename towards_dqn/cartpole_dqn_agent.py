@@ -52,8 +52,6 @@ class ReplayBuffer:
 class Qnet(Model):
     def __init__(self, action_size: int):
         super().__init__()
-        self.gamma = 0.98
-        self.lr = 0.0005
         self.l1 = L.Linear(128)
         self.l2 = L.Linear(128)
         self.l3 = L.Linear(action_size)
