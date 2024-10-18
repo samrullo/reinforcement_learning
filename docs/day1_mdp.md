@@ -87,12 +87,63 @@ Below is a simple example of MDP.
 - When it hits the walls it receives a reward of -1
 - This is a never ending continuous task
 
-**Exercse 1**
+**Exercise 1**
 What kind of *policies* can you think of for the agent? E.g. the agent always moves to the Right.
-Below is the **bakup diagram** for that policy
+Below is the **backup diagram** for that policy
 
 ![move to the right](backup_diagram_move_to_right_always.jpg)
 
 Below is another example of back up diagram where agent chooses actions Right and Left with 50% probability
 
 ![random walk](backup_diagram_random_walk.jpg)
+
+# Optimal policy for 2 cell problem
+What is the optimal policy for our two cell problem?
+It is known that *optimal policy* exists as deterministic policy.
+Deterministic means agent will choose a particular action when at a particular state.
+And deterministic policy is described as below.
+Here mu is a function that produces an action *a* given a state *s*
+
+$$
+a = \mu(s)
+$$
+
+Because we have 2 cells and only 2 actions, we can have total of 4 variations of deterministic policies.
+
+|    | L1    | L2    |
+|----|-------|-------|
+| mu1| Right | Right |
+| mu2| Right | Left  |
+| mu3| Left  | Right |
+| mu4| Left  | Left  |
+
+We can calculate values of each state under each policy.
+Let's start with mu1 policy.
+
+Remember that the value of the state is the expected value of the Return.
+Return is the sum of rewards to infinity when the agent starts from that states and follows the policy.
+
+The Return of *L1* state under policy mu1 is 
+
+$$
+V_{\mu1}(L1) = 1 + 0.9 * (-1) + 0.9^2 * (-1) + 0.9^3 * (-1) + ... = -8
+$$
+
+And the value of *L2* under policy mu1 can also be calculated
+
+$$
+V_{\mu1}(L2) = -1 + 0.9 * (-1) + 0.9^2*(-1) + 0.9^3*(-1) + ... = -10
+$$
+
+
+Let's calculate values of states for each policy
+
+|      | L1   | L2   |
+|------|------|------|
+| Vmu1 | -8   | -10  |
+| Vmu2 | 5.26 | 4.73 |
+| Vmu3 | -10  | -10  |
+| Vmu4 | -10  | -9   |
+
+From above table, it is clear that mu2 is the optimal policy. 
+Because under mu2 policy state values at L1 and L2 are higher than state values under any other policy.

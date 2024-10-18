@@ -13,6 +13,7 @@ import pathlib
 
 # Set the device (GPU if available, otherwise CPU)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"will use device : {device}")
 
 
 class PongQnet(nn.Module):
@@ -60,10 +61,10 @@ class ReplayBuffer:
 
     def get_batch(self):
         data = random.sample(self.buffer, self.batch_size)
-        states = np.stack([item[0] for item in data])
+        states = np.stack([item[0].cpu().numpy() for item in data])
         actions = np.stack([item[1] for item in data])
         rewards = np.stack([item[2] for item in data])
-        next_states = np.stack([item[3] for item in data])
+        next_states = np.stack([item[3].cpu().numpy() for item in data])
         dones = np.stack([item[4] for item in data])
         return states, actions, rewards, next_states, dones
 
@@ -78,7 +79,8 @@ def preprocess_state(state: np.ndarray):
 
 
 def concat_four_frames(list_of_four_frames: deque):
-    return torch.cat(list(list_of_four_frames), dim=0)
+    thedevice = list_of_four_frames[0].device
+    return torch.cat([frame.to(thedevice) for frame in list(list_of_four_frames)], dim=0)
 
 
 resize = Resize(64)
@@ -105,8 +107,10 @@ class PongDQN:
     def __init__(self):
         self.gamma = 0.98
         self.alpha = 0.8
-        self.lr = 0.0005
+        self.lr = 0.01
         self.epsilon = 1
+        self.initial_epsilon = 1
+        self.last_epsilon = 0.1
         self.action_size = 6
         self.last_episode_for_epsilon_warmup = 50
 
@@ -122,8 +126,10 @@ class PongDQN:
         self.optimizer = Adam(self.qnet.parameters(), lr=self.lr)
         self.mse_loss = nn.MSELoss()
 
-    def update_epsilon(self):
-        self.epsilon = 1 - self.epsilon / self.last_episode_for_epsilon_warmup
+    def update_epsilon(self, episode: int):
+        if episode <= self.last_episode_for_epsilon_warmup:
+            self.epsilon = 1 + (
+                    (self.last_epsilon - self.initial_epsilon) / self.last_episode_for_epsilon_warmup) * episode
 
     def get_action(self, state):
         if np.random.rand() < self.epsilon:
@@ -132,7 +138,7 @@ class PongDQN:
             q_values = self.qnet(state)
 
             # assuming q_values has shape (1,action_size)
-            q_vals = q_values.squeeze(dim=0).numpy()
+            q_vals = q_values.squeeze(dim=0).cpu().detach().numpy()
             return np.argmax(q_vals)
 
     def sync_qnet(self):
@@ -148,7 +154,8 @@ class PongDQN:
 
         states, actions, rewards, next_states, dones = torch.from_numpy(states).float().to(device), torch.from_numpy(
             actions).long().to(device), torch.from_numpy(
-            rewards).float().to(device), torch.from_numpy(next_states).float().to(device), torch.from_numpy(np.array(dones)).float().to(device)
+            rewards).float().to(device), torch.from_numpy(next_states).float().to(device), torch.from_numpy(
+            np.array(dones)).float().to(device)
 
         # Q learning is about updating Q function to bring it closer to the TD target which
         # is calculated as R + gamma * (max of Q_next)
@@ -167,17 +174,22 @@ class PongDQN:
         loss.backward()
         self.optimizer.step()
 
+        return loss.item()
+
 
 if __name__ == "__main__":
-    episodes = 300
+    episodes = 1000
     sync_interval = 20
     env = gym.make('Pong-v4', render_mode="rgb_array", obs_type="grayscale")
     agent = PongDQN()
     four_frame_buff = FourFrameBuffer()
-    weights_folder=pathlib.Path.cwd()/"weights"
+    weights_folder = pathlib.Path.cwd() / "weights"
+    weights_folder.mkdir(parents=True, exist_ok=True)
     reward_history = []
+    loss_history = []
 
-    for episode in tqdm(range(episodes)):
+    progress_bar = tqdm(range(episodes), desc="Training progress")
+    for episode in progress_bar:
         state, info = env.reset()
         state = preprocess_state(state).to(device)
         state = preprocess_input_tensors(state).to(device)
@@ -185,9 +197,11 @@ if __name__ == "__main__":
         state = concat_four_frames(four_frame_buff.buffer).to(device)
         done = False
         total_reward = 0
+        episode_loss = 0
+        loss_count = 0
 
         while not done:
-            action = agent.get_action(state)
+            action = agent.get_action(state.unsqueeze(0))
             next_state, reward, terminated, truncated, info = env.step(action)
             next_state = preprocess_state(next_state).to(device)
             next_state = preprocess_input_tensors(next_state).to(device)
@@ -196,18 +210,32 @@ if __name__ == "__main__":
             done = terminated or truncated
 
             next_state = concat_four_frames(four_frame_buff.buffer).to(device)
-            agent.update(state, action, reward, next_state, done)
+            loss = agent.update(state, action, reward, next_state, done)
+
+            if loss is not None:
+                episode_loss += loss
+                loss_count += 1
 
             state = next_state
 
             total_reward += reward
 
-
         if episode % sync_interval == 0:
             agent.sync_qnet()
 
             # save model weights
-            torch.save(agent.qnet.state_dict(),str(weights_folder/f"qnet_weights_{episode}.pth"))
-            torch.save(agent.qnet_target.state_dict(),str(weights_folder/f"qnet_target_weights_{episode}.pth"))
+            torch.save(agent.qnet.state_dict(), str(weights_folder / f"qnet_weights_{episode}.pth"))
+            torch.save(agent.qnet_target.state_dict(), str(weights_folder / f"qnet_target_weights_{episode}.pth"))
 
         reward_history.append(total_reward)
+
+        # Average loss for the episode
+        avg_loss = episode_loss / loss_count if loss_count > 0 else 0
+        loss_history.append(avg_loss)
+
+        agent.update_epsilon(episode)
+        progress_bar.set_postfix({
+            "avg_loss": f"{avg_loss:.4f}",
+            "total_reward": f"{total_reward:.2f}",
+            "epsilon": f"{agent.epsilon:.2f}"
+        })
