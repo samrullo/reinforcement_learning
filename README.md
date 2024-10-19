@@ -5,4 +5,5 @@
 
 **Table of Contents**
 
-- [Day1 : Introduction to RL, RL elements, MDP](docs/day1_mdp.md)
+- [Day1 : Introduction to RL, RL elements, MDP](docs/day1/day1_mdp.md)
+- [Day2 : Bellman Equation](docs/day2_bellman_equation/day2_bellman.md)
