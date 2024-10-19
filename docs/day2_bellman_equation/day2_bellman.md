@@ -71,4 +71,32 @@ Here's how the algorithm to calculate state value using Bellman Equation works
 1. You initialize state values of all states as zero
 2. You calculate values of each state using Bellman Equation
 3. Now that you have updated values for each state, you take absolute difference between new values and older values. And you calculate threshold as the maximum of absolute differences.
-4. You continue steps 1 to 3 until the threshold is less than some small value epsilon (may be 0.0001). When your threshold is very very small it is an indication that you got close to true values and hence updates are getting very small.
+4. You continue steps 2 to 3 until the threshold is less than some small value epsilon (may be 0.0001). When your threshold is very very small it is an indication that you got close to true values and hence updates are getting very small.
+
+For our 2 cell problem, or grid problems in general, each state can be represented as coordinates.
+For a 2D grid you can represent each state as a tuple with 2 elements. For instance (0,0) may represent topmost lef cell, then (0,1) may represent the cell to the right etc..
+
+To simplify our job, we are going to assume state transition as deterministic. This means when agent chooses action *a*, the agent will transition to a concrete next state *s'* and we can represent determination of next state as a function
+
+$$
+s' = f(s,a)
+$$
+
+We can represent action probabilities as dictionaries.
+For instance random policy can be represented as python dictionary.
+Here cell L1 is represented as tuple (0,0) and cell L2 is represented as tuple (0,1). And action left is representedy by integer 0 and action right is represented by integer 1
+
+```python
+pi = {
+      (0,0): {0:0.5, 1:0.5},
+      (0,1): {0:0.5, 1:0.5}
+    }
+```
+
+With above policy we can easily access action probabilities for each state.
+
+We can also represent values of states as a dictionary
+
+```python
+V = {(0,0):0, (0,1):0}
+```
