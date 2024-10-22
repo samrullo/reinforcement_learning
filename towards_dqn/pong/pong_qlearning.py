@@ -22,26 +22,22 @@ class PongQnet(nn.Module):
         super().__init__(*args, **kwargs)
 
         # the input will have a shape (C,H,W) where C=4
-        initial_width = 64
-        kernel_width = 3
-        stride_width = 2
-        padding = 1
-        self.conv1 = nn.Conv2d(in_channels=4, out_channels=64, kernel_size=(kernel_width, kernel_width),
-                               stride=(stride_width, stride_width), padding=(padding, padding))
-        new_width = (initial_width + 2 * padding - kernel_width) // stride_width + 1
-        self.conv2 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(kernel_width, kernel_width),
-                               stride=(stride_width, stride_width), padding=(padding, padding))
-        new_width = (new_width + 2 * padding - kernel_width) // stride_width + 1
-        self.conv3 = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=(kernel_width, kernel_width),
-                               stride=(stride_width, stride_width), padding=(padding, padding))
-        new_width = (new_width + 2 * padding - kernel_width) // stride_width + 1
-        self.l1 = nn.Linear(new_width * new_width * 256, 512)
-        self.out = nn.Linear(512, self.action_size)
+        initial_width = 84
+        out_channels = [16, 32]
+        kernels = [8, 4]
+        strides = [4, 2]
+        self.conv1 = nn.Conv2d(in_channels=4, out_channels=out_channels[0], kernel_size=kernels[0],
+                               stride=strides[0], padding=0)
+        new_width = (initial_width - kernels[0]) // strides[0] + 1
+        self.conv2 = nn.Conv2d(in_channels=16, out_channels=out_channels[1], kernel_size=4,
+                               stride=2, padding=0)
+        new_width = (new_width + - kernels[1]) // strides[1] + 1
+        self.l1 = nn.Linear(new_width * new_width * out_channels[-1], 256)
+        self.out = nn.Linear(256, self.action_size)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
         B = x.size(0)
         x = x.view(B, -1)
         x = F.relu(self.l1(x))
@@ -74,8 +70,12 @@ class ReplayBuffer:
 
 def preprocess_state(state: np.ndarray):
     # state is array with length (210,160)
+    # first resize it to (110,84) and then crop (84,84) region
     # return torch tensor with shape (1,H,W)
-    return torch.from_numpy(state[35:-15, :]).unsqueeze(0)
+    img_pt = torch.from_numpy(state)
+    img_pt = transforms.Resize((110, 84))(img_pt.unsqueeze(0))
+    img_pt = img_pt[:,-84:, :]
+    return img_pt
 
 
 def concat_four_frames(list_of_four_frames: deque):
@@ -83,13 +83,11 @@ def concat_four_frames(list_of_four_frames: deque):
     return torch.cat([frame.to(thedevice) for frame in list(list_of_four_frames)], dim=0)
 
 
-resize = Resize(64)
-IMAGE_SIZE = 64
+IMAGE_SIZE = 84
 
 
 def preprocess_input_tensors(input_tensors):
-    resized_tensors = resize(input_tensors)
-    return resized_tensors / 255.0 - 1.0
+    return input_tensors / 255.0 - 1.0
 
 
 class FourFrameBuffer:
