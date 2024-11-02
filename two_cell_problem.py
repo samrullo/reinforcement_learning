@@ -50,11 +50,20 @@ env = GridEnv()
 gamma = 0.9
 
 V = {state: 0.0 for state in env.get_states()}
+
+# define optimal policy
+move_to_right = {Action.RIGHT: 1.0, Action.LEFT: 0.0}
+move_to_left = {Action.RIGHT: 0.0, Action.LEFT: 1.0}
+optimal_policy = {(0, 0): move_to_right, (0, 1): move_to_left}
+
+# define random policy
 action_probs = {a: 1 / len(env.actions) for a in env.actions}
-# move_to_right = {Action.RIGHT: 1.0, Action.LEFT: 0.0}
-# move_to_left = {Action.RIGHT: 0.0, Action.LEFT: 1.0}
-# pi = {(0, 0): move_to_right, (0, 1): move_to_left}
-pi = {state: action_probs for state in V}
+random_policy = {state: action_probs for state in V}
+
+
+# choose policy that we want to evaluate
+pi = random_policy
+
 
 max_update_diff = 1e+6
 temp = 1e-6

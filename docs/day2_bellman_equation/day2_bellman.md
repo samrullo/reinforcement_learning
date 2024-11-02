@@ -177,5 +177,20 @@ while max_update_diff > thresh and cnt < 1000000:
     cnt += 1
 
 print(V)
-
 ```
+
+You can run ```two_cell_problem.py``` to run code above and print out state values under certain problems.
+Under random policy we find out that L1 cell has value of -2.25 and L2 cell has a value of -2.75. It makes sense that L1 has higher value because every time when the agent moves to the right with 0.5 probability it recieves a reward of 1.
+
+We could also run our ```two_cell_problem.py``` to find state values under the optimal policy, which is move to the right when in cell L1 and move to the left when in cell L2. We do that by defining the optimal policy as below
+
+```python
+# define optimal policy
+move_to_right = {Action.RIGHT: 1.0, Action.LEFT: 0.0}
+move_to_left = {Action.RIGHT: 0.0, Action.LEFT: 1.0}
+optimal_policy = {(0, 0): move_to_right, (0, 1): move_to_left}
+```
+
+And running optimal policy yields similar results we found on day1, L1 has value of 5.26 and L2 has value of 4.74.
+
+Great, now that we learned how to find state values for simple grid problem like two cells, let's continue to a more complex grid problem that contains more cells. And more importantly, let's learn how to find the optimal policy.
