@@ -7,3 +7,4 @@
 
 - [Day1 : Introduction to RL, RL elements, MDP](docs/day1/day1_mdp.md)
 - [Day2 : Bellman Equation](docs/day2_bellman_equation/day2_bellman.md)
+- [Day3 : Optimal Policy](docs/day3_optimal_policy/day3_optimal_policy.md)
