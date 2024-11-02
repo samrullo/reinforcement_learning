@@ -1,6 +1,8 @@
 import gym
 
-env = gym.make('Pong-v4', render_mode="rgb_array",obs_type="grayscale")
+env_names = ["PongNoFrameskip-v4", "Pong-v4"]
+env_name = env_names[0]
+env = gym.make(env_name, render_mode="rgb_array")
 
 # Reset the environment to start a new game
 state = env.reset()
