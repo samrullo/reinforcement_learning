@@ -11,8 +11,8 @@ def value_iter_one_step(V: defaultdict, env: GridWorld, gamma: float = 0.9):
         action_values = []
         for action in env.actions:
             next_state = env.next_state(state, action)
-            thereward = env.reward(state, action, next_state)
-            action_values.append(thereward + gamma * V[next_state])
+            recieved_reward = env.reward(state, action, next_state)
+            action_values.append(recieved_reward + gamma * V[next_state])
         V[state] = max(action_values)
     return V
 
@@ -31,12 +31,7 @@ def value_iter(env: GridWorld, gamma: float = 0.9, thresh: float = 0.001):
 
 
 if __name__ == "__main__":
-    reward_map = np.zeros((7, 8))
-    wall_states = [State(1, 5), State(5, 1), State(5, 5), State(3, 6)]
-    bomb_states = [State(3, 2), State(4, 2), State(4, 3), State(4, 4), State(3, 4), State(1, 7)]
-    goal_state = State(6, 7)
-    apple_states = [goal_state]
-    env = GridWorld(reward_map, wall_states, apple_states, bomb_states, goal_state,6.0)
+    env = GridWorld()
     gamma = 0.9
     thresh = 0.001
 

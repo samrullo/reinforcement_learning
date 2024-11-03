@@ -1,5 +1,5 @@
 import numpy as np
-from common.grid_world import GridWorld, State, Action
+from common.grid_world import GridWorld, State
 from collections import defaultdict
 
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     thresh = 0.001
 
     V = value_iter(env, gamma, thresh)
-    from iterative_policy_improvement import greedy_policy
+    from grid_problems.dynamic_programming.iterative_policy_improvement import greedy_policy
 
     pi = greedy_policy(V, env, gamma)
     env.render_v(V, pi, print_value=True)

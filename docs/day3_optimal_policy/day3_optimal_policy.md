@@ -1,6 +1,6 @@
-# Optimal policy derivation
+# Optimal policy derivation through Policy Iteration
 How do we derive optimal policy?
-On Day1 we learned that state values under optimal policy are greater than or equal to state values under any other policy.
+On Day1 we learned that ```state values``` under optimal policy are greater than or equal to state values under any other policy.
 
 There is actually a formula for Value function under optimal policy.
 
@@ -27,7 +27,7 @@ $$
 4. Now that our policy has changed, we find ```state value```s again under the new policy. And we will repeat steps 3 to 4 until our policy doesn't change anymore. At that point we will know that we converged on the optimal policy.
 
 ## Code implementation
-You can run ```iterative_policy_improvement.py``` to see above algorithm in action. It finds optimal policy for a more complex grid problem. In this problem our grid is a 3x4 grid. As we introduced on day2, each cell is a state and each cell has a coordinate. Top left cell starts at (0,0), as it moves horizontally second element is incremented as in (0,1), (0,2) etc., as it moves vertically first element changes, as in (1,0), (2,0) etc. Our grid environment has a ```wall``` in cell (1,1), a ```bomb``` in cell (1,3), and an ```apple``` in cell (0,3). The agent starts from cell (2,0). When the agent enters the cell with a bomb it will recieve a reward of -1, when it enters the cell with the apple it recieves a reward of +1. We define our grid game as episodic. The goal of the agent is to get to the cell with with an ```apple``` avoiding cell with the ```bomb``` and bypassing the ```wall```. When agent reaches the cell with the apple an episode ends.
+You can run [```grid_problems/dynamic_programming/iterative_policy_improvement.py```](../../grid_problems/dynamic_programming/iterative_policy_improvement.py) to see above algorithm in action. It finds optimal policy for a more complex grid problem. In this problem our grid is a 3x4 grid. As we introduced on day2, each cell is a state and each cell has a coordinate. Top left cell starts at (0,0), as it moves horizontally second element is incremented as in (0,1), (0,2) etc., as it moves vertically first element changes, as in (1,0), (2,0) etc. Our grid environment has a ```wall``` in cell (1,1), a ```bomb``` in cell (1,3), and an ```apple``` in cell (0,3). The agent starts from cell (2,0). When the agent enters the cell with a bomb it will recieve a reward of -1, when it enters the cell with the apple it recieves a reward of +1. We define our grid game as episodic. The goal of the agent is to get to the cell with with an ```apple``` avoiding cell with the ```bomb``` and bypassing the ```wall```. When agent reaches the cell with the apple an episode ends.
 
 As we introduced on Day2, the ```GridWorld``` class implements methods
 - To get all states
@@ -80,3 +80,60 @@ Our code then runs the iteration between ```value``` estimation and policy ```gr
 
 Below is the rendered image of the optimal policy.
 ![Optimal Policy](iterative_policy_improvement.jpg)
+
+# Value iteration
+In above we are iterating between estimating ```state value```s under a policy, ```greedify``` policy, then again estimate ```state values``` under the new policy and so on and so forth. We could visualize this process as below
+
+![Policy iteration](policy_val_iteration.jpg)
+
+This should make you wonder, "Isn't there a shortcut to the goal of finding optimal policy?". And the answer is "Yes, there is".
+
+Instead of jumping back and forth between policy improvement and value estimation, we can use optimal Bellman equation to converge to ```state values``` under not yet derived optimal policy. Then using Optimal ```state value```s we can construct ```greedy policy``` which is also the optimal policy. You can run [value_iteration](../../grid_problems/dynamic_programming/value_iteration_two.py) to see Value Iteration in action. The algorithm for value iteration is similar to estimating values under certain policy. But instead of summing up over actions we estimate as the maximum action value for each state using below formula
+
+$$
+V^*(s) =\max_a \sum_{s'} p(s'|s,a) * (r(s,a,s') + \gamma * V^*(s')) 
+$$
+
+Below is how we implement it in code. We first define ```value_iter_one_step``` function which updates ```state values``` one time by iterating over each ```state```.
+
+```python
+def value_iter_one_step(V: defaultdict, env: GridWorld, gamma: float = 0.9):
+    for state in env.states():
+        if state == env.goal_state:
+            V[state] = 0
+            continue
+        action_values = []
+        for action in env.actions:
+            next_state = env.next_state(state, action)
+            recieved_reward = env.reward(state, action, next_state)
+            action_values.append(recieved_reward + gamma * V[next_state])
+        V[state] = max(action_values)
+    return V
+```
+
+Then we find optimal ```state values``` using below code
+
+```python
+V = defaultdict(lambda: 0)
+while True:
+    old_V = V.copy()
+
+    V = value_iter_one_step(V, env, gamma)
+    delta = max([abs(V[state] - old_V[state]) for state in env.states()])
+
+    if delta < thresh:
+        break
+```
+
+Once we converge into optimal ```state value```s, we can derive optimal policy through greedification.
+
+```python
+pi = greedy_policy(V, env, gamma)
+```
+
+That's it now we know how to derive Optimal Policy for fairly complex grid problems. Notice that in these problems we knew environment model. Specifically
+- We could iterate over entire states of the environment. This is rarely the case for real world problems. Even for fairly complex games like chess or Go, states are almost infinite.
+- We knew rewards for any combination of state, action, next_state. This is also rare for real world problems
+- We knew state transitions for all states. Again this is rare for real world problems, because we can not know all states and all possible transitions beforehand.
+
+In the next chapters we will solve the problem of finding Optimal Policy, when the agent doesn't know environment model beforehand. When we don't know environment model beforhand, we let the agent act in the environment, gather data and train itself to derive its optimal policy.

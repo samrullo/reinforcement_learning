@@ -28,16 +28,18 @@ class PongQnet(nn.Module):
         strides = [4, 2]
         self.conv1 = nn.Conv2d(in_channels=4, out_channels=out_channels[0], kernel_size=kernels[0],
                                stride=strides[0], padding=0)
+        self.bn1 = nn.BatchNorm2d(num_features=out_channels[0])
         new_width = (initial_width - kernels[0]) // strides[0] + 1
         self.conv2 = nn.Conv2d(in_channels=16, out_channels=out_channels[1], kernel_size=4,
                                stride=2, padding=0)
+        self.bn2 = nn.BatchNorm2d(num_features=out_channels[1])
         new_width = (new_width + - kernels[1]) // strides[1] + 1
         self.l1 = nn.Linear(new_width * new_width * out_channels[-1], 256)
         self.out = nn.Linear(256, self.action_size)
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
         B = x.size(0)
         x = x.view(B, -1)
         x = F.relu(self.l1(x))
@@ -74,7 +76,7 @@ def preprocess_state(state: np.ndarray):
     # return torch tensor with shape (1,H,W)
     img_pt = torch.from_numpy(state)
     img_pt = transforms.Resize((110, 84))(img_pt.unsqueeze(0))
-    img_pt = img_pt[:,-84:, :]
+    img_pt = img_pt[:, -84:, :]
     return img_pt
 
 
@@ -120,6 +122,8 @@ class PongDQN:
 
         self.qnet = PongQnet(self.action_size).to(device)
         self.qnet_target = PongQnet(self.action_size).to(device)
+        self.qnet_target.load_state_dict(self.qnet.state_dict())
+        self.qnet_target.eval()
 
         self.optimizer = Adam(self.qnet.parameters(), lr=self.lr)
         self.mse_loss = nn.MSELoss()
@@ -133,10 +137,11 @@ class PongDQN:
         if np.random.rand() < self.epsilon:
             return np.random.choice(self.action_size)
         else:
-            q_values = self.qnet(state)
+            with torch.no_grad():
+                q_values = self.qnet(state)
 
-            # assuming q_values has shape (1,action_size)
-            q_vals = q_values.squeeze(dim=0).cpu().detach().numpy()
+                # assuming q_values has shape (1,action_size)
+                q_vals = q_values.squeeze(dim=0).cpu().detach().numpy()
             return np.argmax(q_vals)
 
     def sync_qnet(self):
@@ -157,7 +162,8 @@ class PongDQN:
 
         # Q learning is about updating Q function to bring it closer to the TD target which
         # is calculated as R + gamma * (max of Q_next)
-        next_q_values = self.qnet_target(next_states)
+        with torch.no_grad():
+            next_q_values = self.qnet_target(next_states)
         next_q_max, _idx = next_q_values.max(dim=1)
         next_q_max.detach()
         targets = rewards + (1 - dones) * self.gamma * next_q_max
