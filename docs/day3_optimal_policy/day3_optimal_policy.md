@@ -136,4 +136,4 @@ That's it now we know how to derive Optimal Policy for fairly complex grid probl
 - We knew rewards for any combination of state, action, next_state. This is also rare for real world problems
 - We knew state transitions for all states. Again this is rare for real world problems, because we can not know all states and all possible transitions beforehand.
 
-In the next chapters we will solve the problem of finding Optimal Policy, when the agent doesn't know environment model beforehand. When we don't know environment model beforhand, we let the agent act in the environment, gather data and train itself to derive its optimal policy.
+In the next chapters we will solve the problem of finding Optimal Policy, when the agent doesn't know environment model beforehand. When we don't know environment model beforehand, we let the agent act in the environment, gather data and train itself to derive its optimal policy.
